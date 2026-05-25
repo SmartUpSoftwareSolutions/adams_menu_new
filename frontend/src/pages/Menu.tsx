@@ -140,7 +140,7 @@ const GridMenuItem = React.memo(
         <TagIcons tagIcons={item.tagIcons} />
         <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
           <span className="text-base font-bold text-orange-500 tracking-tight">
-            {item.price}
+            {item.price.replace("$", "")}
           </span>
         </div>
       </div>
@@ -174,7 +174,7 @@ const ListMenuItem = React.memo(
       </div>
       <div className="flex-shrink-0 pt-0.5">
         <span className="text-sm font-bold text-orange-500 whitespace-nowrap">
-          {item.price}
+          {item.price.replace("$", "")}
         </span>
       </div>
     </div>
@@ -209,7 +209,7 @@ const CardMenuItem = React.memo(
           <div className="mt-3 pt-3 border-t border-gray-50">
             <TagIcons tagIcons={item.tagIcons} />
             <span className="text-lg font-bold text-orange-500 tracking-tight">
-              {item.price}
+              {item.price.replace("$", "")}
             </span>
           </div>
         </div>

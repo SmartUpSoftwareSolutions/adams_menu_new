@@ -70,7 +70,7 @@ const MenuItemDetail = () => {
               {name}
             </h1>
             <span className="text-2xl font-bold text-orange-500 whitespace-nowrap flex-shrink-0">
-              {item.price}
+              {item.price.replace("$", "")}
             </span>
           </div>
 
