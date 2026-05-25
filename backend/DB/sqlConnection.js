@@ -1,5 +1,5 @@
 import sql from 'mssql';
-import { decryptEnvVar, encryptEnvVar } from '../src/utils/decryptEnvVar.js';
+import { decryptEnvVar } from '../src/utils/decryptEnvVar.js';
 // Base configuration that can be extended for different databases
 const decryptedPassword = decryptEnvVar(
     process.env.SQLSERVER_PASSWORD_ENCRYPTED,
@@ -29,7 +29,8 @@ const masterDBConfig = {
 }
 const clientDBConfig = {
     ...baseDBConfig,
-    database: 'ADAMSSE'}
+    database: process.env.ERP_DATABASE_NAME,
+}
 
 // Master DB connection pool
 export const SqlServerDB = new sql.ConnectionPool(clientDBConfig);

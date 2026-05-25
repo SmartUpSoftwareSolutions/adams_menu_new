@@ -21,97 +21,55 @@ async function getErpPoolForRequest(req) {
   }
 }
 
-/** 🔹 Sync branches to restaurant_branches table (optimized with parallel operations) */
+/** 🔹 Get allowed branch codes from local branches table */
+async function getAllowedBranchCodes() {
+  try {
+    const rows = await prisma.branch.findMany({ select: { code: true } });
+    if (rows.length === 0) return null; // no branches configured = no filter
+    return new Set(rows.map((r) => r.code));
+  } catch {
+    return null; // null = no filter (allow all)
+  }
+}
+
+/** 🔹 Sync branches to restaurant_branches table — only updates existing branches, never creates new ones */
 const syncBranchesToRestaurantBranches = async (branchesToSync) => {
   try {
     if (!branchesToSync || branchesToSync.length === 0) {
       return { success: true, synced: 0 };
     }
 
-    logger.info(`Syncing ${branchesToSync.length} branches to restaurant_branches table...`);
-    
-    // Filter valid branches and create upsert promises
     const validBranches = branchesToSync.filter(branch => branch.code && branch.name);
-    
-    if (validBranches.length === 0) {
-      logger.warn("No valid branches to sync");
-      return { success: true, synced: 0 };
-    }
-
-    // Check if restaurantBranch model exists (graceful fallback with timeout)
-    try {
-      // Test if model exists by trying a simple query with timeout
-      await Promise.race([
-        prisma.restaurantBranch.findFirst({ take: 1 }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Model check timeout')), 5000)
-        ),
-      ]);
-    } catch (modelError) {
-      // If it's a timeout or connection pool error, skip gracefully
-      if (
-        modelError.message?.includes('restaurantBranch') || 
-        modelError.message?.includes('restaurant_branches') ||
-        modelError.message?.includes('timeout') ||
-        modelError.message?.includes('connection pool')
-      ) {
-        logger.warn("restaurant_branches table/model not available or connection issue, skipping branch sync:", modelError.message);
-        return { success: true, synced: 0, skipped: true };
-      }
-      throw modelError;
-    }
-
-    // Process in chunks to avoid overwhelming connection pool
-    const chunkSize = 50;
-    const chunks = [];
-    for (let i = 0; i < validBranches.length; i += chunkSize) {
-      chunks.push(validBranches.slice(i, i + chunkSize));
-    }
+    if (validBranches.length === 0) return { success: true, synced: 0 };
 
     let totalSuccessful = 0;
     let totalFailed = 0;
 
-    // Process chunks sequentially, but operations within chunk in parallel
-    for (const chunk of chunks) {
-      const upsertPromises = chunk.flatMap((branch) => [
-        prisma.restaurantBranch.upsert({
+    for (const branch of validBranches) {
+      const results = await Promise.allSettled([
+        prisma.restaurantBranch.updateMany({
           where: { branch_code: branch.code },
-          update: { branch_name: branch.name, updated_at: new Date() },
-          create: { branch_code: branch.code, branch_name: branch.name, company: null },
+          data: { branch_name: branch.name, updated_at: new Date() },
         }),
-        prisma.branch.upsert({
+        prisma.branch.updateMany({
           where: { code: branch.code },
-          update: { name: branch.name },
-          create: { code: branch.code, name: branch.name },
+          data: { name: branch.name },
         }),
       ]);
 
-      const results = await Promise.allSettled(upsertPromises);
-      
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      totalSuccessful += successful;
-      totalFailed += failed;
-
-      if (failed > 0) {
-        results.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            logger.error(`Error upserting branch ${chunk[index].code}:`, result.reason?.message || result.reason);
-          }
-        });
-      }
+      results.forEach((r) => {
+        if (r.status === 'fulfilled') totalSuccessful++;
+        else {
+          totalFailed++;
+          logger.error(`Error updating branch ${branch.code}:`, r.reason?.message);
+        }
+      });
     }
 
-    if (totalFailed > 0) {
-      logger.warn(`${totalFailed} branch upserts failed out of ${validBranches.length}`);
-    }
-
-    logger.info(`✅ Successfully synced ${totalSuccessful} branches to restaurant_branches table`);
+    logger.info(`✅ Updated ${totalSuccessful} branch records`);
     return { success: true, synced: totalSuccessful, failed: totalFailed };
   } catch (error) {
-    logger.error("Error syncing branches to restaurant_branches:", error);
-    // Don't fail the entire sync if branch sync fails
+    logger.error("Error syncing branches:", error);
     return { success: false, error: error.message, skipped: true };
   }
 };
@@ -246,15 +204,18 @@ export const syncAllBranchesStream = async (req, res) => {
       return res.end();
     }
 
+    // Only sync branches that are configured in the local branches table
+    const allowedCodes = await getAllowedBranchCodes();
+
     const branchesToSync = branchRecords
       .map((b) => ({
         code: b?.BRANCH_CODE?.trim?.() || b?.branch_code?.trim?.() || "",
         name: b?.BRANCH_NAME?.trim?.() || b?.BRANCH_CODE?.trim?.() || "",
       }))
-      .filter((b) => b.code);
+      .filter((b) => b.code && (!allowedCodes || allowedCodes.has(b.code)));
 
     if (branchesToSync.length === 0) {
-      send({ type: "error", message: "No branches found to sync." });
+      send({ type: "error", message: "No matching branches found. Ensure branches are configured in the Branches admin page." });
       return res.end();
     }
 
@@ -579,6 +540,9 @@ export const truncateAndSyncAllBranches = asyncHandler(async (req, res) => {
       );
     }
 
+    // Only sync branches that are configured in the local branches table
+    const allowedCodesForTruncate = await getAllowedBranchCodes();
+
     const branchesToSync = branchRecords
       .map((branch) => ({
         code:
@@ -593,13 +557,12 @@ export const truncateAndSyncAllBranches = asyncHandler(async (req, res) => {
           branch?.BRANCH_CODE?.trim?.() ||
           "",
       }))
-      .filter((branch) => branch.code);
+      .filter((branch) => branch.code && (!allowedCodesForTruncate || allowedCodesForTruncate.has(branch.code)));
 
     if (branchesToSync.length === 0) {
       return res.status(404).json({
         success: false,
-        message:
-          "No branches were found to sync. Please provide branch codes or ensure ERP branch configuration is available.",
+        message: "No matching branches found. Ensure branches are configured in the Branches admin page.",
       });
     }
 
