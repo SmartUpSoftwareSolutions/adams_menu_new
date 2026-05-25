@@ -98,9 +98,9 @@ class ItemTransferService {
 
       const erpGroups = await erpQuery(
         `
-        SELECT 
-          g.ITM_GROUP_CODE, 
-          g.ITM_GROUP_NAME, 
+        SELECT
+          g.ITM_GROUP_CODE,
+          g.ITM_GROUP_NAME,
           g.SHOW_IN_WEBSITE,
           g.GROUP_ORDER,
           g.WEBSITE_DESCRIPTION_AR,
@@ -111,8 +111,8 @@ class ItemTransferService {
           g.MAIN_GROUP AS PARENT_GROUP_CODE,
           b.BRANCH
         FROM INV_ITEM_MAIN_GROUP g
-        INNER JOIN SYS_COMPANY_BRANCHES_SETUP b 
-          ON g.ITM_GROUP_CODE = b.CODE 
+        INNER JOIN SYS_COMPANY_BRANCHES_SETUP b
+          ON g.ITM_GROUP_CODE = b.CODE
           AND b.TYPE_CODE = 'ITEM_GROUP'
           AND b.BRANCH = @branchCode
         ORDER BY g.GROUP_ORDER
@@ -177,15 +177,16 @@ class ItemTransferService {
   /** 🔹 Transfer Items */
   async transferItemMaster(branchCode, dbPool) {
     try {
+      // Load valid group codes from the standard ERP table
       const groups = await erpQuery(
         `
-        SELECT 
-          g.ITM_GROUP_CODE, 
-          b.CODE, 
+        SELECT
+          g.ITM_GROUP_CODE,
+          b.CODE,
           b.BRANCH
         FROM INV_ITEM_MAIN_GROUP g
-        INNER JOIN SYS_COMPANY_BRANCHES_SETUP b 
-          ON g.ITM_GROUP_CODE = b.CODE 
+        INNER JOIN SYS_COMPANY_BRANCHES_SETUP b
+          ON g.ITM_GROUP_CODE = b.CODE
           AND b.TYPE_CODE = 'ITEM_GROUP'
         WHERE b.BRANCH = @branchCode
         `,

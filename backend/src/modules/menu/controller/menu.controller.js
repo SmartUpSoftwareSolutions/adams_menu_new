@@ -73,22 +73,18 @@ const syncBranchesToRestaurantBranches = async (branchesToSync) => {
 
     // Process chunks sequentially, but operations within chunk in parallel
     for (const chunk of chunks) {
-      const upsertPromises = chunk.map((branch) =>
+      const upsertPromises = chunk.flatMap((branch) => [
         prisma.restaurantBranch.upsert({
-          where: {
-            branch_code: branch.code,
-          },
-          update: {
-            branch_name: branch.name,
-            updated_at: new Date(),
-          },
-          create: {
-            branch_code: branch.code,
-            branch_name: branch.name,
-            company: null,
-          },
-        })
-      );
+          where: { branch_code: branch.code },
+          update: { branch_name: branch.name, updated_at: new Date() },
+          create: { branch_code: branch.code, branch_name: branch.name, company: null },
+        }),
+        prisma.branch.upsert({
+          where: { code: branch.code },
+          update: { name: branch.name },
+          create: { code: branch.code, name: branch.name },
+        }),
+      ]);
 
       const results = await Promise.allSettled(upsertPromises);
       
@@ -238,16 +234,10 @@ export const syncAllBranchesStream = async (req, res) => {
     let branchRecords;
     try {
       branchRecords = await erpQuery(
-        `SELECT DISTINCT
-          B.BRANCH AS BRANCH_CODE,
-          COALESCE(BS.BRANCH_NAME, B.BRANCH) AS BRANCH_NAME
-        FROM SYS_COMPANY_BRANCHES_SETUP B
-        LEFT JOIN SYS_COMPANY_BRANCHES BS ON BS.BRANCH_CODE = B.BRANCH
-        WHERE B.TYPE_CODE = 'ITEM_GROUP'
-          AND B.BRANCH IS NOT NULL
-          AND LTRIM(RTRIM(B.BRANCH)) <> ''
-          AND BS.Active = 1
-        ORDER BY BRANCH_CODE;`,
+        `SELECT BRANCH_CODE, BRANCH_NAME
+         FROM SYS_COMPANY_BRANCHES
+         WHERE Active = 1
+         ORDER BY BRANCH_CODE`,
         {},
         dbPool
       );
@@ -350,21 +340,14 @@ export const syncAllBranches = asyncHandler(async (req, res) => {
         BRANCH_NAME: code,
       }));
     } else {
-      branchRecords = await erpQuery(`
-        SELECT DISTINCT 
-          B.BRANCH AS BRANCH_CODE,
-          COALESCE(BS.BRANCH_NAME, B.BRANCH) AS BRANCH_NAME
-        FROM SYS_COMPANY_BRANCHES_SETUP B
-        LEFT JOIN SYS_COMPANY_BRANCHES BS
-          ON BS.BRANCH_CODE = B.BRANCH
-        WHERE 
-          B.TYPE_CODE = 'ITEM_GROUP'
-          AND B.BRANCH IS NOT NULL
-          AND LTRIM(RTRIM(B.BRANCH)) <> ''
-          AND BS.Active = 1           -- ✅ only active branches
-        ORDER BY BRANCH_CODE;
-      `, {}, dbPool);
-      
+      branchRecords = await erpQuery(
+        `SELECT BRANCH_CODE, BRANCH_NAME
+         FROM SYS_COMPANY_BRANCHES
+         WHERE Active = 1
+         ORDER BY BRANCH_CODE`,
+        {},
+        dbPool
+      );
     }
 
     const branchesToSync = branchRecords
@@ -586,20 +569,14 @@ export const truncateAndSyncAllBranches = asyncHandler(async (req, res) => {
         BRANCH_NAME: code,
       }));
     } else {
-      branchRecords = await erpQuery(`
-        SELECT DISTINCT 
-          B.BRANCH AS BRANCH_CODE,
-          COALESCE(BS.BRANCH_NAME, B.BRANCH) AS BRANCH_NAME
-        FROM SYS_COMPANY_BRANCHES_SETUP B
-        LEFT JOIN SYS_COMPANY_BRANCHES BS
-          ON BS.BRANCH_CODE = B.BRANCH
-        WHERE 
-          B.TYPE_CODE = 'ITEM_GROUP'
-          AND B.BRANCH IS NOT NULL
-          AND LTRIM(RTRIM(B.BRANCH)) <> ''
-          AND BS.Active = 1
-        ORDER BY BRANCH_CODE;
-      `, {}, dbPool);
+      branchRecords = await erpQuery(
+        `SELECT BRANCH_CODE, BRANCH_NAME
+         FROM SYS_COMPANY_BRANCHES
+         WHERE Active = 1
+         ORDER BY BRANCH_CODE`,
+        {},
+        dbPool
+      );
     }
 
     const branchesToSync = branchRecords

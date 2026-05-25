@@ -4,7 +4,7 @@ export async function createDatabaseIfNotExists(databaseName) {
   const config = {
     user: process.env.DB_USER || 'sa',
     password: process.env.DB_PASSWORD || '123@123qw',
-    server: process.env.DB_HOST || '192.168.1.47',
+    server: process.env. || '192.168.1.47',
     port: parseInt(process.env.DB_PORT || '1433', 10),
     options: {
       encrypt: false,
