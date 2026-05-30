@@ -2,7 +2,6 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { MenuItem } from "@/services/menuServices";
 import { useLanguage } from "@/hooks/useLanguage";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
 import { useMenuItemImage } from "@/getImageSrc";
 
@@ -28,17 +27,15 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           language === "ar" ? "flex-row-reverse" : "flex-row"
         )}
       >
-        <div className="relative w-1/3 min-w-[120px] overflow-hidden">
-          <AspectRatio ratio={1} className="h-full">
-            <img
-              src={getImageSrc(item)}
-              alt={item.name || "Menu item"}
-              onError={(e) => {
-                e.currentTarget.src = fallbackImage;
-              }}
-              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-            />
-          </AspectRatio>
+        <div className="relative w-1/3 min-w-[120px] overflow-hidden self-stretch">
+          <img
+            src={getImageSrc(item)}
+            alt={item.name || "Menu item"}
+            onError={(e) => {
+              e.currentTarget.src = fallbackImage;
+            }}
+            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
+          />
         </div>
 
         <div className="flex flex-col justify-between w-2/3 p-4">

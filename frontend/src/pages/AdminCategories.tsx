@@ -108,6 +108,8 @@ const normalizeCategory = (
     branchCode: (raw?.branch_code ?? raw?.branchCode ?? null) as string | null,
     show_in_website: raw?.show_in_website !== false,
     saleable: raw?.saleable !== false,
+    commentEn: (raw?.comment_en ?? null) as string | null,
+    commentAr: (raw?.comment_ar ?? null) as string | null,
   };
 };
 
