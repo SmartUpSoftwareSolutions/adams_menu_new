@@ -90,15 +90,18 @@ class LocationTransferService {
 
       if (existingLocation) {
         try {
+          const updatePayload = {
+            name: locationData.name,
+            address: locationData.address,
+            city: locationData.city,
+            map_link: locationData.map_link,
+          };
+          if (locationData.working_hours) {
+            updatePayload.working_hours = locationData.working_hours;
+          }
           const updated = await this.prisma.location.update({
             where: { id: existingLocation.id },
-            data: {
-              name: locationData.name,
-              address: locationData.address,
-              city: locationData.city,
-              map_link: locationData.map_link,
-              working_hours: locationData.working_hours || null,
-            },
+            data: updatePayload,
           });
           upsertResult = { data: updated, updated: true };
         } catch (updateError) {

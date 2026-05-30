@@ -503,7 +503,6 @@ class ItemTransferService {
             },
             update: {
               itm_group_name: g.itm_group_name,
-              order_group: g.order_group,
               show_in_website: g.show_in_website,
               saleable: g.saleable,
               website_description_ar: g.website_description_ar,
@@ -586,7 +585,6 @@ class ItemTransferService {
             },
             update: {
               itm_name: i.itm_name,
-              item_order: i.item_order,
               itm_group_code: i.itm_group_code,
               photo_url: i.photo_url,
               sales_price: i.sales_price,
@@ -595,11 +593,6 @@ class ItemTransferService {
               website_name_ar: i.website_name_ar,
               website_name_en: i.website_name_en,
               branch_code: i.branch_code,
-              fasting: i.fasting,
-              vegetarian: i.vegetarian,
-              healthy_choice: i.healthy_choice,
-              signature_dish: i.signature_dish,
-              spicy: i.spicy,
             },
             create: {
               itm_code: i.itm_code,
