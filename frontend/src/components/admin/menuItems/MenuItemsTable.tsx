@@ -85,6 +85,7 @@ const MenuItemsTable: React.FC<MenuItemsTableProps> = ({
     Record<string, boolean>
   >({});
   const [showOnWebsiteFilter, setShowOnWebsiteFilter] = useState<boolean | null>(null);
+  const [itemOrderOverrides, setItemOrderOverrides] = useState<Record<string, number>>({});
   const [isLocalRefreshing, setIsLocalRefreshing] = useState(false);
   const refreshing = isLocalRefreshing || externalRefreshing;
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
@@ -109,6 +110,9 @@ const MenuItemsTable: React.FC<MenuItemsTableProps> = ({
           ...itemWithBranch,
           branchCode:
             itemWithBranch.branchCode ?? itemWithBranch.branch_code ?? null,
+          // Apply optimistic order override if present
+          itemOrder: itemOrderOverrides[item.id] ?? itemWithBranch.itemOrder,
+          order: itemOrderOverrides[item.id] ?? itemWithBranch.order,
           fasting: itemWithBranch.fasting === true,
           vegetarian: itemWithBranch.vegetarian === true,
           healthyChoice: itemWithBranch.healthyChoice === true,
@@ -116,7 +120,7 @@ const MenuItemsTable: React.FC<MenuItemsTableProps> = ({
           spicy: itemWithBranch.spicy === true,
         };
       }),
-    [items]
+    [items, itemOrderOverrides]
   );
 
   // Only fetch the small item_main_group table to get valid category codes.
@@ -283,15 +287,47 @@ const handleItemOrderSave = async (item: MenuItemWithBranch, itemKey: string) =>
     try {
       setSavingItemOrders((prev) => ({ ...prev, [itemKey]: true }));
 
-      const branchQuery = item.branchCode ? `?branch_code=${item.branchCode}` : '';
-      await api.patch(`/api/items/items/${item.id}${branchQuery}`, { item_order: itemOrder });
+      // Patch every branch that belongs to this item row
+      const allCodes: string[] =
+        (item as DisplayItem).allBranchCodes?.length > 0
+          ? (item as DisplayItem).allBranchCodes
+          : item.branchCode ? [item.branchCode] : [];
+
+      const itemNameKey = getItemDedupKey(item);
+
+      const patches =
+        allCodes.length > 0
+          ? allCodes.map((bc) => {
+              // Find the actual itm_code for this branch (may differ across branches)
+              const branchItem = visibleItems.find(
+                (vi) => getItemDedupKey(vi) === itemNameKey && vi.branchCode === bc
+              );
+              const itmCode = branchItem?.id ?? item.id;
+              return api.patch(`/api/items/items/${itmCode}?branch_code=${bc}`, { item_order: itemOrder });
+            })
+          : [api.patch(`/api/items/items/${item.id}${item.branchCode ? `?branch_code=${item.branchCode}` : ''}`, { item_order: itemOrder })];
+
+      await Promise.all(patches);
+
       toast.success("Item order updated successfully");
+
+      // Optimistic update — reflect new order immediately for all branches of this item
+      setItemOrderOverrides((prev) => {
+        const next = { ...prev };
+        visibleItems.forEach((vi) => {
+          if (getItemDedupKey(vi) === itemNameKey) next[vi.id] = itemOrder;
+        });
+        return next;
+      });
+
       setItemOrderInputs((prev) => {
         const next = { ...prev };
         delete next[itemKey];
         return next;
       });
-      if (onRefresh) await Promise.resolve(onRefresh());
+
+      // Background sync (no skeleton shown — overrides already updated the UI)
+      if (onRefresh) Promise.resolve(onRefresh());
     } catch (error) {
       toast.error("Failed to update item order: " + error.message);
     } finally {

@@ -1202,11 +1202,8 @@ const Menu = () => {
         {(() => {
           const comment = language === "ar" ? activeCategoryComment.ar : activeCategoryComment.en;
           return comment ? (
-            <div className="px-4 pt-4 pb-1 lg:px-0">
-              <p className={cn(
-                "text-sm text-gray-500 leading-relaxed",
-                language === "ar" ? "text-right" : "text-left"
-              )}>
+            <div className="px-4 pt-4 pb-2 lg:px-0">
+              <p className="text-base font-medium text-gray-600 leading-relaxed text-center">
                 {comment}
               </p>
             </div>
