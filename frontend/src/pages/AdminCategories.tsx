@@ -385,15 +385,35 @@ const AdminCategories = () => {
       }
 
       try {
-        const branchQuery = category.branchCode ? `?branch_code=${category.branchCode}` : '';
-        await api.patch(`/api/items/categories/${category.id}${branchQuery}`, { order_group: order });
+        // Patch every branch that belongs to this category row
+        const allCodes: string[] =
+          (category as any).allBranchCodes?.length > 0
+            ? (category as any).allBranchCodes
+            : category.branchCode
+            ? [category.branchCode]
+            : [];
+
+        await Promise.all(
+          allCodes.length > 0
+            ? allCodes.map((bc) =>
+                api.patch(`/api/items/categories/${category.id}?branch_code=${bc}`, { order_group: order })
+              )
+            : [api.patch(`/api/items/categories/${category.id}`, { order_group: order })]
+        );
+
         toast.success("Order updated successfully");
+
+        // Optimistic update — reflect new order immediately without waiting for re-fetch
+        setCategories((prev) =>
+          prev.map((c) => (c.id === category.id ? { ...c, orderGroup: order } : c))
+        );
         setOrderInputs((previous) => {
           const next = { ...previous };
           delete next[categoryKey];
           return next;
         });
-        fetchAllCategories();
+
+        fetchAllCategories(); // background sync
       } catch (error) {
         console.error("Failed to update order:", error);
         toast.error(

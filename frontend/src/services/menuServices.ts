@@ -323,10 +323,10 @@ export const useMenuItems = (branchCode?: string | null) =>
     queryKey: ["menuItems", branchCode ?? "default"],
     queryFn: () => fetchMenuItems(branchCode),
     enabled: branchCode !== undefined ? branchCode !== null && branchCode !== "" : true,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     placeholderData: (prev) => prev,
   });
 

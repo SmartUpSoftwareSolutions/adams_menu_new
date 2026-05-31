@@ -291,6 +291,7 @@ const handleItemOrderSave = async (item: MenuItemWithBranch, itemKey: string) =>
         delete next[itemKey];
         return next;
       });
+      if (onRefresh) await Promise.resolve(onRefresh());
     } catch (error) {
       toast.error("Failed to update item order: " + error.message);
     } finally {

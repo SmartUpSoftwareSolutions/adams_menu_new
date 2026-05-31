@@ -5,15 +5,15 @@ import React from "react";
 export function sortMenuItems(items: MenuItem[]): MenuItem[] {
     if (!Array.isArray(items)) return [];
     return [...items].sort((a, b) => {
-      const orderA = a.itemOrder ?? 0;
-      const orderB = b.itemOrder ?? 0;
-  
-      // Sort by itemOrder ascending
+      // null/undefined order → sort last (matches PostgreSQL ASC NULLS LAST)
+      const orderA = a.itemOrder ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.itemOrder ?? Number.MAX_SAFE_INTEGER;
+
       if (orderA !== orderB) {
         return orderA - orderB;
       }
-  
-      // Then sort by name ascending alphabetical
+
+      // Tie-break alphabetically
       return (a.name || '').localeCompare(b.name || '');
     });
   }
