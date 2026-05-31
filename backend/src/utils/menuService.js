@@ -88,6 +88,8 @@ class MenuService {
         nested_level: true,
         parent_group_code: true,
         path: true,
+        comment_en: true,
+        comment_ar: true,
       },
       take: limit,
       skip: offset,
@@ -102,6 +104,8 @@ class MenuService {
       nested_level: Number(cat.nested_level),
       parent_group_code: cat.parent_group_code,
       path: cat.path,
+      commentEn: cat.comment_en ?? null,
+      commentAr: cat.comment_ar ?? null,
       children: [],
     }));
   }
@@ -133,6 +137,8 @@ class MenuService {
         nested_level: true,
         parent_group_code: true,
         path: true,
+        comment_en: true,
+        comment_ar: true,
       },
       take: limit,
       skip: offset,
@@ -147,6 +153,8 @@ class MenuService {
       nested_level: Number(cat.nested_level),
       parent_group_code: cat.parent_group_code,
       path: cat.path,
+      commentEn: cat.comment_en ?? null,
+      commentAr: cat.comment_ar ?? null,
       children: [],
     }));
   }
@@ -180,6 +188,8 @@ class MenuService {
         nested_level: true,
         parent_group_code: true,
         path: true,
+        comment_en: true,
+        comment_ar: true,
       },
       take: limit,
       skip: offset,
@@ -194,6 +204,8 @@ class MenuService {
       nested_level: Number(cat.nested_level),
       parent_group_code: cat.parent_group_code,
       path: cat.path,
+      commentEn: cat.comment_en ?? null,
+      commentAr: cat.comment_ar ?? null,
       children: [],
     }));
   }
