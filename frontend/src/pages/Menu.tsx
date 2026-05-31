@@ -970,10 +970,11 @@ const Menu = () => {
           </div>
         ) : (
           <>
-            <div className="sticky top-[57px] z-30 bg-white border-b border-gray-200 lg:hidden">
+            <div className="sticky top-[57px] z-30 bg-white border-b border-gray-200 lg:hidden" dir={language === "ar" ? "rtl" : "ltr"}>
               <div
                 ref={mobileTabsContainerRef}
                 className="flex overflow-x-auto px-3 pt-3"
+                dir={language === "ar" ? "rtl" : "ltr"}
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 onScroll={checkMobileScrollPosition}
               >
@@ -1034,10 +1035,12 @@ const Menu = () => {
               <Tabs
                 value={activeParentCategory || "all"}
                 className="sticky top-[57px] -mx-8 bg-white/98 px-8 backdrop-blur border-b border-gray-200"
+                dir={language === "ar" ? "rtl" : "ltr"}
               >
                 <div
                   ref={tabsContainerRef}
                   className="flex overflow-x-auto scrollbar-hide justify-center"
+                  dir={language === "ar" ? "rtl" : "ltr"}
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   onScroll={checkScrollPosition}
                 >
