@@ -887,6 +887,7 @@ const Menu = () => {
 
   return (
     <div
+      dir={language === "ar" ? "rtl" : "ltr"}
       className={cn(
         "min-h-screen bg-neutral-50",
         language === "ar" ? "text-right" : "text-left"
