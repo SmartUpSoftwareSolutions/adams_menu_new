@@ -978,8 +978,8 @@ const Menu = () => {
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 onScroll={checkMobileScrollPosition}
               >
-                <Tabs value={activeParentCategory || "all"}>
-                  <TabsList className="flex w-max gap-0 rounded-none bg-transparent p-0 h-auto">
+                <Tabs value={activeParentCategory || "all"} dir={language === "ar" ? "rtl" : "ltr"}>
+                  <TabsList dir={language === "ar" ? "rtl" : "ltr"} className="flex w-max gap-0 rounded-none bg-transparent p-0 h-auto">
                     {showAllCategory && (
                       <TabsTrigger
                         value="all"
@@ -1044,7 +1044,7 @@ const Menu = () => {
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   onScroll={checkScrollPosition}
                 >
-                  <TabsList className="flex w-max gap-0 rounded-none bg-transparent p-0 h-auto">
+                  <TabsList dir={language === "ar" ? "rtl" : "ltr"} className="flex w-max gap-0 rounded-none bg-transparent p-0 h-auto">
                     {showAllCategory && (
                       <TabsTrigger
                         value="all"
